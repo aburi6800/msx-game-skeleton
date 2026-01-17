@@ -1,0 +1,8 @@
+*.bin
+*.lis
+*.map
+*.sym
+build/*
+src/c/test/*
+mics/
+.tmp/*
