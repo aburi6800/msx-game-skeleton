@@ -7,27 +7,50 @@
 #include "game_common.h"
 
 
-/*
- * スプライトアトリビュートテーブル
- */
+// スプライトアトリビュートテーブル
 SpriteAttr_t spriteAttrTbl[32];
 
-/*
- * スプライトプレーンテーブル
- */
+// スプライトプレーンテーブル
 uint8_t spritePlaneTbl[32];
 
-/*
- * スクリーンバッファ
- */
+// スクリーンバッファ
 uint8_t screenBuffer[SCREENBUFF_SIZE];
 
-/*
- * 入力情報
- */
+// 入力情報
 uint8_t INPUT_STICK;
 uint8_t INPUT_STRIGA;
 uint8_t INPUT_STRIGB;
+
+// 方向テーブル
+uint8_t directionTbl[] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    5,3,2,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    5,3,3,2,2,1,1,1,1,1,1,1,1,1,1,1,
+    5,4,3,3,2,2,2,2,1,1,1,1,1,1,1,1,
+    5,4,3,3,3,2,2,2,2,2,1,1,1,1,1,1,
+    5,4,4,3,3,3,2,2,2,2,2,2,2,1,1,1,
+    5,4,4,3,3,3,3,2,2,2,2,2,2,2,2,1,
+    5,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,
+    5,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,
+    5,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,
+    5,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,
+    5,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,
+    5,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,
+    5,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,
+    5,4,4,4,4,4,3,3,3,3,3,3,3,3,3,2,
+    5,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3
+};
+
+// 移動量テーブル
+// 実数で扱うため、256倍しておく
+//int vx[] = { 0.00,  0.00,  0.38,  0.75,  0.92,  1.00,  0.92,  0.75,  0.38,  0.00, -0.38, -0.75, -0.92, -1.00, -0.92, -0.75, -0.38 };
+//int vy[] = { 0.00, -1.00, -0.92, -0.75, -0.38,  0.00,  0.38,  0.75,  0.92,  1.00,  0.92,  0.75,  0.38,  0.00, -0.38, -0.75, -0.92 };
+int vx[] =   {    0,     0,    97,   192,   235,   256,   235,   192,    97,     0,   -97,  -192,  -235,  -256,  -235,  -192,   -97 };
+int vy[] =   {    0,  -256,  -235,  -192,   -97,     0,    97,   192,   235,   256,   235,   192,    97,     0,   -97,  -192,  -235 };
+
+// VSYNC処理実行フラグ
+bool vsync_exec = false;
+uint8_t vsync_count = FRAME_RATE;
 
 
 /*
@@ -133,11 +156,12 @@ void set_spriteAttrTable(uint8_t plane, SpriteAttr_t attr)
  * return:
  * - void
  */
-void add_bcd(uint16_t addValue, uint8_t *distAddr, uint8_t distBytes)
+void add_bcd(uint16_t addValue, uint8_t *distAddr, uint8_t distBytes) __naked
 {
-// clang-format off
 #ifndef __INTELLISENSE__
+// clang-format off
 __asm
+
     ; SPに+2してリターンアドレスをスキップ
     LD      HL, 2
     ADD     HL, SP
@@ -163,7 +187,7 @@ __asm
     POP     HL                      ; HL <- 加算対象データアドレス
 
     ; 加算対象データバイト数により処理開始アドレス設定
-    DEC     B                       ; 加算対象データバイト数を1減算(1byte=0、2byte=1、3byte=2)
+    DEC     B                       ; 加算対象データバイト数を1減算 (1byte=0、2byte=1、3byte=2)
 
     LD      A, B                    ; A <- B
     ADD     A, L                    ; HL=HL+A
@@ -219,8 +243,8 @@ add_bcd_L2:
     RET
 
 __endasm
-#endif
 // clang-format on
+#endif
 }
 
 /*
@@ -235,11 +259,12 @@ __endasm
  * return:
  * - void
  */
-void write_screenBuffer_bcd(uint8_t *buffAddr, uint8_t buffOffset, uint8_t *dataAddr, uint8_t dataBytes)
+void write_screenBuffer_bcd(uint8_t *buffAddr, uint8_t buffOffset, uint8_t *dataAddr, uint8_t dataBytes) __naked
 {
-// clang-format off
 #ifndef __INTELLISENSE__
+// clang-format off
 __asm
+
     ; SPに+2してリターンアドレスをスキップ
     LD      HL, 2
     ADD     HL, SP
@@ -283,7 +308,7 @@ PRTBCD:
 
     LD      A, B                    ; A <- B (表示データバイト数)
     ADD     A, A                    ; 表示データバイト数*2 で表示文字数を算出
-    LD      B, A                    ; B(繰り返し数) = 表示文字数
+    LD      B, A                    ; B (繰り返し数) = 表示文字数
 
 PRTBCD_L2:
     LD      (HL), $20               ; 表示桁分、スペースを埋める
@@ -301,7 +326,7 @@ PRTBCD_L2:
     LD      C,0                     ; ゼロ表示フラグ初期化
 
 PRTBCD_L3:
-    LD      A, (DE)                 ; A <- DE(表示データ)
+    LD      A, (DE)                 ; A <- DE (表示データ)
 	CALL    PUTBCD                  ; データを表示
 
     INC     DE                      ; DE = DE + 1 (表示データの次のアドレスが設定される)
@@ -328,7 +353,7 @@ PUTBCD:
 
 PUTBCD_L1:
     ; スクリーンバッファにデータを設定
-	AND     $0F                     ; 上位4ビットをゼロにする(=下位4ビットの値だけ取り出す)
+	AND     $0F                     ; 上位4ビットをゼロにする (=下位4ビットの値だけ取り出す)
     OR      A
     JR      NZ, PUTBCD_L2           ; 値がゼロ以外の場合はL2へ
 
@@ -342,13 +367,16 @@ PUTBCD_L2:
     LD      (HL), A                 ; 仮想画面にデータを設定
 
     RET
+
 __endasm
-#endif
 // clang-format on
+#endif
 }
 
 /**
  * 入力情報取得
+ * 入力値はINPUT_STICK、INPUT_STRIGAに保存される
+ * INPUT_STICKは0～8の値、INPUT_STRIGAはON=1、OFF=0の値となる
  *
  * args:
  * - None
@@ -356,33 +384,35 @@ __endasm
  * return:
  * - void
  */
-void get_control()
+void get_control() __naked __FASTCALL__
 {
-// clang-format off
 #ifndef __INTELLISENSE__
+// clang-format off
 __asm
+
     CALL    0x0156                  ; BIOS : KILBUF
     OR      A                       ; キャリーフラグクリア
 
     ; STICK値取得
-    XOR     A                       ; A <- ジョイスティック番号=0(キーボード)
+    XOR     A                       ; A <- ジョイスティック番号=0 (キーボード)
     CALL    0x00D5                  ; BIOS : GTSTCK
-                                    ;   AF, BCレジスタを破壊
-    LD      D, A                    ; レジスタを退避
-    LD      A, 1                    ; A <- ジョイスティック番号=1(パッド1)
+                                    ; - A = 入力値 (0～8)
+    OR      A
+    JR      NZ, get_control_l1
+
+    LD      A, 1                    ; A <- ジョイスティック番号=1 (パッド1)
     CALL    0x00D5                  ; BIOS : GTSTCK
-                                    ;   AF, BCレジスタを破壊
-    OR      D                       ; キーボードとパッドの入力の OR を取る
-                                    ;   最大で15となる
+                                    ; - A = 入力値 (0～8)
+get_control_l1:
     LD      (_INPUT_STICK), A       ; 現在の入力値を保存
 
-    ; STRIG値取得
-    XOR     A                       ; A <- ジョイスティック番号=0(キーボード)
+    ; STRIG値取得(Aボタン)
+    XOR     A                       ; A <- ジョイスティック番号=0 (キーボード)
     CALL    0x00D8                  ; BIOS : GTTRIG
                                     ; - 0x00 = 押されていない
                                     ; - 0xFF = 押されている
     LD      D, A
-    LD      A, 1                    ; A <- ジョイスティック番号=0(パッド1)
+    LD      A, 1                    ; A <- ジョイスティック番号=1 (ジョイスティックポート1 ボタンA)
     CALL    0x00D8                  ; BIOS : GTTRIG
     OR      D
     AND     0x01
@@ -391,6 +421,55 @@ __asm
     RET
 
 __endasm
-#endif
 // clang-format on
+#endif
+}
+
+/*
+ * 方向取得処理
+ * 方向は上から右周りに1～16で返される
+ *
+ * args:
+ * - x1             uint8_t     開始点のX座標
+ * - y1             uint8_t     開始点のY座標
+ * - x2             uint8_t     目標点のX座標
+ * - y2             uint8_t     目標点のY座標
+ *
+ * return:
+ * - uint8_t        方向値(1～16)
+ */
+uint8_t get_direction(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
+{
+    uint8_t XX, YY, DP;
+    uint8_t BD;
+
+    x1 = x1 >> 4;
+    y1 = y1 >> 4;
+    x2 = x2 >> 4;
+    y2 = y2 >> 4;
+
+    if (x1 <= x2 && y1 >= y2) {
+        XX = y1 - y2;
+        YY = x2 - x1;
+        DP = 1;
+    } else if (x1 <= x2 && y1 <= y2) {
+        XX = x2 - x1;
+        YY = y2 - y1;
+        DP = 5;
+    } else if (x1 >= x2 && y1 <= y2) {
+        XX = y2 - y1;
+        YY = x1 - x2;
+        DP = 9;
+    } else {
+        XX = x1 - x2;
+        YY = y1 - y2;
+        DP = 13;
+    }
+
+    BD = directionTbl[(YY << 4) + XX] + DP;
+    if (BD > 16) {
+        BD -= 16;
+    }
+
+    return BD;
 }

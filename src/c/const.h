@@ -4,9 +4,6 @@
 #ifndef CONST_H
 #define CONST_H
 
-// フレームレート
-#define FRAME_RATE          0       // 0=1/60、1=1/30, 2=1/15
-
 // VRAM操作用定数
 #define VRAM_PTN_GENR_TBL1  0x0000  // パターンジェネレータテーブル(ページ1)
 #define VRAM_PTN_GENR_TBL2  0x0800  // パターンジェネレータテーブル(ページ2)
