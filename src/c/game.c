@@ -21,13 +21,13 @@ extern uint8_t SPRITE_PATTERN[];
 Game_t game;
 
 // 画面中の敵弾数
-uint8_t enemy_bullet_num = 0;
+uint8_t enemyBulletCount = 0;
 
 // キャラクターアトリビュートテーブル
 CharacterAttr_t characterAttrTbl[32];
 
 // 敵弾パターンテーブル
-uint8_t enemy_bullet_ptn[2] = {8, 12};
+uint8_t enemy_bullet_ptn[2] = {12, 16};
 
 
 // 文字列定義
@@ -41,6 +41,9 @@ unsigned char score[3] = {0x00, 0x00, 0x00};
 
 // プレイヤー移動テーブル
 uint8_t playerMoveTbl[9] = { 0,  1,  3,  5,  7,  9, 11, 13, 15};
+
+// 画面上のショット数カウンタ
+uint8_t playerBulletCount = 0;
 
 // スクロール用のマップデータ
 // 縦2画面分を確保する
@@ -84,7 +87,7 @@ void boot_game()
     vwrite(BANK_COLOR_0, VRAM_COLOR_TBL3, VRAM_COLOR_SIZE);
 
     // スプライトパターンテーブル設定
-    vwrite(SPRITE_PATTERN, VRAM_SPR_PTN_TBL, 32 * 4);
+    vwrite(SPRITE_PATTERN, VRAM_SPR_PTN_TBL, 32 * 5);
 
     // H.TIMIフック設定
 #ifndef __INTELLISENSE__
@@ -309,71 +312,77 @@ void game_start()
     characterAttrTbl[1].vy = 0;
 
     // 敵
-    characterAttrTbl[2].type = TYPE_ENEMY;
-    characterAttrTbl[2].attr.x = 48;
-    characterAttrTbl[2].attr.y = 80;
-    characterAttrTbl[2].attr.col = 13;
-    characterAttrTbl[2].attr.ptn = 0;
-    characterAttrTbl[2].x = characterAttrTbl[2].attr.x << 8;
-    characterAttrTbl[2].y = characterAttrTbl[2].attr.y << 8;
-    characterAttrTbl[2].vx = 0;
-    characterAttrTbl[2].vy = -2;
-    characterAttrTbl[2].count = 10;
+    uint8_t idx = ENEMY_IDX;
+    characterAttrTbl[idx].type = TYPE_ENEMY;
+    characterAttrTbl[idx].attr.x = 48;
+    characterAttrTbl[idx].attr.y = 80;
+    characterAttrTbl[idx].attr.col = 13;
+    characterAttrTbl[idx].attr.ptn = 0;
+    characterAttrTbl[idx].x = characterAttrTbl[2].attr.x << 8;
+    characterAttrTbl[idx].y = characterAttrTbl[2].attr.y << 8;
+    characterAttrTbl[idx].vx = 0;
+    characterAttrTbl[idx].vy = -2;
+    characterAttrTbl[idx].count = 10;
 
-    characterAttrTbl[3].type = TYPE_ENEMY;
-    characterAttrTbl[3].attr.x = 72;
-    characterAttrTbl[3].attr.y = 82;
-    characterAttrTbl[3].attr.col = 12;
-    characterAttrTbl[3].attr.ptn = 0;
-    characterAttrTbl[3].x = characterAttrTbl[3].attr.x << 8;
-    characterAttrTbl[3].y = characterAttrTbl[3].attr.y << 8;
-    characterAttrTbl[3].vx = 0;
-    characterAttrTbl[3].vy = -1;
-    characterAttrTbl[3].count = 15;
+    idx++;
+    characterAttrTbl[idx].type = TYPE_ENEMY;
+    characterAttrTbl[idx].attr.x = 72;
+    characterAttrTbl[idx].attr.y = 82;
+    characterAttrTbl[idx].attr.col = 12;
+    characterAttrTbl[idx].attr.ptn = 0;
+    characterAttrTbl[idx].x = characterAttrTbl[3].attr.x << 8;
+    characterAttrTbl[idx].y = characterAttrTbl[3].attr.y << 8;
+    characterAttrTbl[idx].vx = 0;
+    characterAttrTbl[idx].vy = -1;
+    characterAttrTbl[idx].count = 15;
 
-    characterAttrTbl[4].type = TYPE_ENEMY;
-    characterAttrTbl[4].attr.x = 96;
-    characterAttrTbl[4].attr.y = 84;
-    characterAttrTbl[4].attr.col = 10;
-    characterAttrTbl[4].attr.ptn = 0;
-    characterAttrTbl[4].x = characterAttrTbl[4].attr.x << 8;
-    characterAttrTbl[4].y = characterAttrTbl[4].attr.y << 8;
-    characterAttrTbl[4].vx = 0;
-    characterAttrTbl[4].vy = 2;
-    characterAttrTbl[4].count = 22;
+    idx++;
+    characterAttrTbl[idx].type = TYPE_ENEMY;
+    characterAttrTbl[idx].attr.x = 96;
+    characterAttrTbl[idx].attr.y = 84;
+    characterAttrTbl[idx].attr.col = 10;
+    characterAttrTbl[idx].attr.ptn = 0;
+    characterAttrTbl[idx].x = characterAttrTbl[4].attr.x << 8;
+    characterAttrTbl[idx].y = characterAttrTbl[4].attr.y << 8;
+    characterAttrTbl[idx].vx = 0;
+    characterAttrTbl[idx].vy = 2;
+    characterAttrTbl[idx].count = 22;
 
-    characterAttrTbl[5].type = TYPE_ENEMY;
-    characterAttrTbl[5].attr.x = 144;
-    characterAttrTbl[5].attr.y = 90;
-    characterAttrTbl[5].attr.col = 7;
-    characterAttrTbl[5].attr.ptn = 0;
-    characterAttrTbl[5].x = characterAttrTbl[5].attr.x << 8;
-    characterAttrTbl[5].y = characterAttrTbl[5].attr.y << 8;
-    characterAttrTbl[5].vx = 0;
-    characterAttrTbl[5].vy = -2;
-    characterAttrTbl[5].count = 29;
+    idx++;
+    characterAttrTbl[idx].type = TYPE_ENEMY;
+    characterAttrTbl[idx].attr.x = 144;
+    characterAttrTbl[idx].attr.y = 90;
+    characterAttrTbl[idx].attr.col = 7;
+    characterAttrTbl[idx].attr.ptn = 0;
+    characterAttrTbl[idx].x = characterAttrTbl[5].attr.x << 8;
+    characterAttrTbl[idx].y = characterAttrTbl[5].attr.y << 8;
+    characterAttrTbl[idx].vx = 0;
+    characterAttrTbl[idx].vy = -2;
+    characterAttrTbl[idx].count = 29;
 
-    characterAttrTbl[6].type = TYPE_ENEMY;
-    characterAttrTbl[6].attr.x = 168;
-    characterAttrTbl[6].attr.y = 92;
-    characterAttrTbl[6].attr.col = 4;
-    characterAttrTbl[6].attr.ptn = 0;
-    characterAttrTbl[6].x = characterAttrTbl[6].attr.x << 8;
-    characterAttrTbl[6].y = characterAttrTbl[6].attr.y << 8;
-    characterAttrTbl[6].vx = 0;
-    characterAttrTbl[6].vy = -1;
-    characterAttrTbl[6].count = 36;
+    idx++;
+    characterAttrTbl[idx].type = TYPE_ENEMY;
+    characterAttrTbl[idx].attr.x = 168;
+    characterAttrTbl[idx].attr.y = 92;
+    characterAttrTbl[idx].attr.col = 4;
+    characterAttrTbl[idx].attr.ptn = 0;
+    characterAttrTbl[idx].x = characterAttrTbl[6].attr.x << 8;
+    characterAttrTbl[idx].y = characterAttrTbl[6].attr.y << 8;
+    characterAttrTbl[idx].vx = 0;
+    characterAttrTbl[idx].vy = -1;
+    characterAttrTbl[idx].count = 36;
 
-    characterAttrTbl[7].type = TYPE_ENEMY;
-    characterAttrTbl[7].attr.x = 192;
-    characterAttrTbl[7].attr.y = 94;
-    characterAttrTbl[7].attr.col = 3;
-    characterAttrTbl[7].attr.ptn = 0;
-    characterAttrTbl[7].x = characterAttrTbl[7].attr.x << 8;
-    characterAttrTbl[7].y = characterAttrTbl[7].attr.y << 8;
-    characterAttrTbl[7].vx = 0;
-    characterAttrTbl[7].vy = 2;
-    characterAttrTbl[7].count = 41;
+    idx++;
+    characterAttrTbl[idx].type = TYPE_ENEMY;
+    characterAttrTbl[idx].attr.x = 192;
+    characterAttrTbl[idx].attr.y = 94;
+    characterAttrTbl[idx].attr.col = 3;
+    characterAttrTbl[idx].attr.ptn = 0;
+    characterAttrTbl[idx].x = characterAttrTbl[7].attr.x << 8;
+    characterAttrTbl[idx].y = characterAttrTbl[7].attr.y << 8;
+    characterAttrTbl[idx].vx = 0;
+    characterAttrTbl[idx].vy = 2;
+    characterAttrTbl[idx].count = 41;
 
 /*
     // マップデータ初期化
@@ -415,6 +424,9 @@ void game_start()
     // マップのオフセット位置設定
     mapOffset = 24 * 32;
 */
+
+    // 画面上のショット数カウンタをリセット
+    playerBulletCount = 0;
 
     clear_screenbuffer();
 
@@ -467,6 +479,40 @@ void game_main()
                 characterAttrTbl[1].attr.y = character->attr.y;
             }
 
+            if (INPUT_STRIGA) {
+                if (playerBulletCount < 6) {
+                    for (uint8_t i = 0; i < PLAYER_BULLET_MAX; i++) {
+                        uint8_t idx = PLAYER_BULLET_IDX + i;
+                        if (characterAttrTbl[idx].type == TYPE_NONE) {
+                            playerBulletCount++;
+                            CharacterAttr_t *e_bullet = &characterAttrTbl[idx]; 
+                            e_bullet->type = TYPE_P_BULLET;
+                            e_bullet->attr.x = character->attr.x;
+                            e_bullet->attr.y = character->attr.y;
+                            e_bullet->attr.col  = 14;
+                            e_bullet->attr.ptn  = 8;
+                            e_bullet->x = character->attr.x << 8;
+                            e_bullet->y = character->attr.y << 8;
+                            e_bullet->vx = 0;
+                            e_bullet->vy = (vy[1] * 14); // 14 = speed
+                            break;
+                        }
+                    }
+                }
+            }
+
+        // プレイヤー弾
+        } else if (character->type == TYPE_P_BULLET) {
+            character->y += character->vy;
+            character->attr.y = character->y >> 8;
+            if (character->attr.y < 16) {
+                character->type = TYPE_NONE;
+                character->attr.x = 0;
+                character->attr.y = 193;
+
+                playerBulletCount--;
+            }
+
         // 敵
         } else if (character->type == TYPE_ENEMY) {
             // 移動
@@ -490,23 +536,24 @@ void game_main()
                 // 次の発射までのカウンタリセット
                 character->count = 40;
                 // 弾を生成できる？
-                if (enemy_bullet_num < ENEMY_BULLET_MAX) {
+                if (enemyBulletCount < ENEMY_BULLET_MAX) {
                     // 弾を生成
                     for (uint8_t i = 0; i < ENEMY_BULLET_MAX; i++) {
-                        if (characterAttrTbl[i].type == TYPE_NONE) {
-                            characterAttrTbl[i].type = TYPE_E_BULLET;
-                            characterAttrTbl[i].attr.x = character->attr.x;
-                            characterAttrTbl[i].attr.y = character->attr.y;
-                            characterAttrTbl[i].x = character->attr.x << 8;
-                            characterAttrTbl[i].y = character->attr.y << 8;
-                            characterAttrTbl[i].attr.col  = 7;
-                            characterAttrTbl[i].attr.ptn  = enemy_bullet_ptn[game.tick % 2];
+                        uint8_t idx = ENEMY_BULLET_IDX + i;
+                        if (characterAttrTbl[idx].type == TYPE_NONE) {
+                            enemyBulletCount++;
+                            CharacterAttr_t *e_bullet = &characterAttrTbl[idx]; 
+                            e_bullet->type = TYPE_E_BULLET;
+                            e_bullet->attr.x = character->attr.x;
+                            e_bullet->attr.y = character->attr.y;
+                            e_bullet->attr.col  = 7;
+                            e_bullet->attr.ptn  = enemy_bullet_ptn[game.tick % 2];
+                            e_bullet->x = character->attr.x << 8;
+                            e_bullet->y = character->attr.y << 8;
                             uint8_t d = get_direction(character->attr.x, character->attr.y, characterAttrTbl[0].attr.x, characterAttrTbl[0].attr.y);
 //                            characterAttrTbl[i].speed = 8;
-                            characterAttrTbl[i].vx = (vx[d] * 8); // 8 = speed
-                            characterAttrTbl[i].vy = (vy[d] * 8); // 8 = speed
-
-                            enemy_bullet_num++;
+                            e_bullet->vx = (vx[d] * 8); // 8 = speed
+                            e_bullet->vy = (vy[d] * 8); // 8 = speed
                             break;
                         }
                     }
@@ -525,7 +572,7 @@ void game_main()
                 character->attr.x = 0;
                 character->attr.y = 193;
 
-                enemy_bullet_num--;
+                enemyBulletCount--;
             }
             // プレイヤーとの当たり判定もここで行う
         }

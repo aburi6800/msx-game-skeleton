@@ -12,8 +12,13 @@
 /*
  * 定数
  */
-#define ENEMY_BULLET_MAX    20              // 画面中の最大敵弾数
+#define PLAYER_BULLET_MAX    6              // 画面中の最大プレイヤー弾数
+#define PLAYER_BULLET_IDX    3              // プレイヤー弾のキャラクタアトリビュートの開始インデックス
+#define ENEMY_BULLET_MAX    10              // 画面中の最大敵弾数
 #define ENEMY_BULLET_IDX    10              // 敵弾のキャラクタアトリビュートの開始インデックス
+#define ENEMY_MAX           10              // 画面中の最大敵数
+#define ENEMY_IDX           20              // 画面中の最大敵数
+
 #define MAPDATA_SIZE        SCREENBUFF_SIZE * 2 // マップデータサイズ
 
 /*
