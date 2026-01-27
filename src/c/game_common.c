@@ -21,6 +21,9 @@ uint8_t INPUT_STICK;
 uint8_t INPUT_STRIGA;
 uint8_t INPUT_STRIGB;
 
+// 乱数値
+uint8_t _rnd_save;
+
 // 方向テーブル
 uint8_t directionTbl[] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -47,10 +50,6 @@ uint8_t directionTbl[] = {
 //int vy[] = { 0.00, -1.00, -0.92, -0.75, -0.38,  0.00,  0.38,  0.75,  0.92,  1.00,  0.92,  0.75,  0.38,  0.00, -0.38, -0.75, -0.92 };
 int vx[] =   {    0,     0,    97,   192,   235,   256,   235,   192,    97,     0,   -97,  -192,  -235,  -256,  -235,  -192,   -97 };
 int vy[] =   {    0,  -256,  -235,  -192,   -97,     0,    97,   192,   235,   256,   235,   192,    97,     0,   -97,  -192,  -235 };
-
-// VSYNC処理実行フラグ
-bool vsync_exec = false;
-uint8_t vsync_count = FRAME_RATE;
 
 
 /*
@@ -369,8 +368,8 @@ PUTBCD_L2:
     RET
 
 __endasm
-// clang-format on
 #endif
+// clang-format on
 }
 
 /**
@@ -386,8 +385,8 @@ __endasm
  */
 void get_control() __naked __FASTCALL__
 {
-#ifndef __INTELLISENSE__
 // clang-format off
+#ifndef __INTELLISENSE__
 __asm
 
     CALL    0x0156                  ; BIOS : KILBUF
@@ -421,8 +420,60 @@ get_control_l1:
     RET
 
 __endasm
-// clang-format on
 #endif
+// clang-format on
+}
+
+/*
+ * 8bit乱数初期化処理
+ * 
+ * args:
+ * - none
+ *
+ * return:
+ * - uint8_t        乱数
+ */
+uint8_t init_rnd(uint8_t seed)
+{
+    _rnd_save = seed;
+}
+
+/*
+ * 8bit乱数取得処理
+ * 事前にINIT_RNDを実行すること
+ * 
+ * args:
+ * - none
+ *
+ * return:
+ * - uint8_t        乱数
+ */
+uint8_t get_rnd() __naked
+{
+// clang-format off
+#ifndef __INTELLISENSE__
+__asm
+
+    PUSH    BC
+    
+    LD      A, (__rnd_save)         ; get preview value
+    LD      B, A
+    LD      A, B
+
+    ADD     A, A                    ; A = A * 5
+    ADD     A, A
+    ADD     A, B
+
+    ADD     A, 123
+    LD      (__rnd_save), A
+
+    POP     BC
+
+    RET
+
+__endasm
+#endif
+// clang-format on
 }
 
 /*

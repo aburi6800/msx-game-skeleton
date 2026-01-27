@@ -19,7 +19,9 @@
 #define ENEMY_MAX           10              // 画面中の最大敵数
 #define ENEMY_IDX           20              // 画面中の最大敵数
 
-#define MAPDATA_SIZE        SCREENBUFF_SIZE * 2 // マップデータサイズ
+#define DISPLAY_ROWNUM      24              // 表示行数
+
+#define FRAME_RATE          1                // フレームレート 1=1/60、2=1/30, 3=1/15
 
 /*
  * ゲーム状態Enum

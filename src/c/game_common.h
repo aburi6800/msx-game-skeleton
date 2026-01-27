@@ -8,9 +8,6 @@
 #ifndef GAME_COMMON_H
 #define GAME_COMMON_H
 
-// フレームレート
-#define FRAME_RATE          1       // 0=1/60、1=1/30, 2=1/15
-
 // スクリーンバッファ定数
 #define SCREENBUFF_WIDTH    32
 #define SCREENBUFF_HEIGHT   24
@@ -216,6 +213,28 @@ void write_screenBuffer_bcd(uint8_t *buffAddr, uint8_t buffOffset, uint8_t *data
  * - void
  */
 void get_control() __naked __FASTCALL__;
+
+/*
+ * 8bit乱数初期化処理
+ * 
+ * args:
+ * - none
+ *
+ * return:
+ * - uint8_t        乱数
+ */
+uint8_t init_rnd(uint8_t seed);
+
+/*
+ * 8bit乱数取得処理
+ * 事前にINIT_RNDを実行しておくこと
+ * args:
+ * - none
+ *
+ * return:
+ * - uint8_t        乱数
+ */
+uint8_t get_rnd() __naked;
 
 /*
  * 方向取得処理

@@ -29,6 +29,10 @@ CharacterAttr_t characterAttrTbl[32];
 // 敵弾パターンテーブル
 uint8_t enemy_bullet_ptn[2] = {12, 16};
 
+// VSYNC処理実行フラグ
+bool vsync_exec = false;
+uint8_t vsync_count = FRAME_RATE;
+
 
 // 文字列定義
 uint8_t TITLE1[] = "SHOOTING GAME";
@@ -45,13 +49,68 @@ uint8_t playerMoveTbl[9] = { 0,  1,  3,  5,  7,  9, 11, 13, 15};
 // 画面上のショット数カウンタ
 uint8_t playerBulletCount = 0;
 
-// スクロール用のマップデータ
-// 縦2画面分を確保する
-//uint8_t mapData[MAPDATA_SIZE];
+// スクロール用
+// 表示データ
+uint8_t mapdata[48 * 24 + 1] = {
+    'A', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'B', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'C', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'D', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'E', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'F', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'G', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'H', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'I', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'J', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'K', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'L', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'M', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'N', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'O', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'P', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'Q', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'R', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'S', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'T', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'U', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'V', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'W', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ',
+    'X', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2', ' ', '2',
+    'A', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'B', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'C', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'D', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'E', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'F', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'G', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'H', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'I', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'J', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'K', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'L', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'M', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'N', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'O', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'P', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'Q', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'R', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'S', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'T', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'U', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'V', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    'W', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ',
+    'X', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1', ' ', '1',
+    0xff
+};
 
-// マップの転送開始位置
-//uint16_t mapOffset;
+// スクロールカウンタ
+uint8_t scroll_step = 0;
 
+// マップデータの転送開始位置
+uint16_t mapdata_idx = 24 * 24;
+
+// テスト文字列
+uint8_t testText[] = {'G', 'A', 'M', 'E', ' ', 'O', 'V', 'E', 'R'};
 
 /*
  * ゲーム起動処理
@@ -140,42 +199,31 @@ void change_game_state(GameState_t state)
  */
 void draw_game() __naked __z88dk_fastcall
 {
-/* Cの実装
-    // VSYNC処理が許可されていないときはreturn
-    if (vsync_count) {
-        --vsync_count;
-        return;
-    }
-    if (!vsync_exec) {
-        return;
-    }
-    // スプライトアトリビュートテーブル更新
-    vwrite(spriteAttrTbl, VRAM_SPR_ATTR_TBL, VRAM_SPR_ATTR_SIZE);
-    // パターンネームテーブル更新
-    vwrite(screenBuffer, VRAM_PTN_NAME_TBL, VRAM_PTN_NAME_SIZE);
-    // VSYNC処理不許可にする
-    vsync_exec = false;
-    vsync_count = FRAME_RATE;
-*/
 // clang-format off
 #ifndef __INTELLISENSE__
 #asm
-    // VSYNC処理が許可されていないときはreturn
+    // VSYNCカウント
+    //   1 = スクロール処理
+    //   0 = その他処理
     LD      A, (_vsync_count)
     OR      A
     JR      Z, _draw_game_1
 
     DEC     A
     LD      (_vsync_count), A
-    RET
+    JR      _do_reverse_scroll_step     ; スクロール
 
 _draw_game_1:
+    // VSYNC処理が許可されていないときはreturn
     LD      A, (_vsync_exec)
     OR      A
     RET     Z
 
 _draw_game_2:
-    // 周辺色変更
+
+    DI
+
+    ; 周辺色変更
 ;    LD      A, 0x07                     ; COLOR CODE
 ;    LD      (0xF3EB), A                 ; 0xF3EB = BDRCLR
 ;    CALL    0x0062                      ; BIOS : CHGCLR
@@ -187,9 +235,9 @@ _draw_game_2:
     CALL    0x005C                      ; BIOS : LDIRVM
 
     ; パターンネームテーブル更新
-    LD      HL, _screenBuffer           ; Source addr
-    LD      DE, VRAM_PTN_NAME_TBL       ; Dist addr
-    LD      BC, VRAM_PTN_NAME_SIZE      ; Length
+    LD      HL, _testText               ; Source addr
+    LD      DE, VRAM_PTN_NAME_TBL + 8 + 10 * 32 ; Dist addr
+    LD      BC, 9                       ; Length
     CALL    0x005C                      ; BIOS : LDIRVM
 
     ; VSYNC処理を不許可にする
@@ -199,46 +247,90 @@ _draw_game_2:
     LD      (_vsync_count), A
 
     ; 周辺色戻す
-;    LD      A, 0x01             ; COLOR CODE
-;    LD      (0xF3EB), A         ; 0xF3EB = BDRCLR
-;    CALL    0x0062              ; BIOS : CHGCLR
+;    LD      A, 0x01                    ; COLOR CODE
+;    LD      (0xF3EB), A                ; 0xF3EB = BDRCLR
+;    CALL    0x0062                     ; BIOS : CHGCLR
+
+    EI
+
+    RET
+
+;----------------------------------
+; reverse_scroll
+;----------------------------------
+_do_reverse_scroll_step:
+    DI
+
+    ; HL = src addr
+    LD      HL, _mapdata
+    LD      BC, (_mapdata_idx)          ; map offset
+    ADD     HL, BC
+
+    ; DE = dst VRAM addr
+    LD      DE, 0x1800
+
+    ; B = loop counter(line)
+    LD      B, 24                       ; row num
+
+_loop:
+    ; ---- SET WRITE ----
+    LD      A, (0x0007)                 ; get write port #0 address
+    LD      C, A
+    INC     C                           ; port #1 address
+
+    LD      A, E                        ; set dist addr
+    OUT     (C), A
+    LD      A, D
+    OR      0x40                        ; write mode
+    OUT     (C), A
+    PUSH    BC
+
+    LD      B, 24                       ; col num
+
+    ; ---- WRITE ----
+    DEC     C                           ; port #0 address
+_loop_1:
+    OUTI
+    JP      NZ, _loop_1
+
+    EX      DE, HL
+    ADD     HL, 32
+    EX      DE, HL
+
+
+; 末端まで行ったか
+    LD      A, (HL)
+    CP      0xFF
+    JP      NZ, _loop_next
+
+_reset_mapdata_idx:
+    LD      HL, _mapdata                ; set first address
+
+
+_loop_next:
+    POP     BC
+    DJNZ    _loop
+
+    LD      HL, (_mapdata_idx)
+    LD      A, H
+    OR      L
+    JR      Z, _reset_mapdata_idx2
+    ADD     HL, -24
+    LD      (_mapdata_idx), HL
+
+    EI
+
+    RET
+
+_reset_mapdata_idx2:
+    LD      HL, 576 * 2 - 24            ; set last line
+    LD      (_mapdata_idx), HL
+
+    RET
+
 #endasm;
 #endif
 // clang-format on
-}
-
-/*
- * マップデータ初期化
- * mapDataを引数のキャラクターで埋める
- *
- * args:
- * - data           uint8_t     マップデータを埋めるキャラクターコード
- * 
- * return:
- * - void
- */
-void initMapData(uint8_t data)
-{
-//    for (uint16_t i = 0; i < MAPDATA_SIZE; i++) {
-//        mapData[i] = data;
-//    }
-}
-
-
-/*
- * マップデータ書き込み
- * mapDataの指定位置にマップデータを書き込む
- *
- * args:
- * - pos            uint16_t    マップデータの書き込み位置
- * - data           uint8_t     マップデータ（キャラクターコード）
- * 
- * return:
- * - void
- */
-void writeMapData(uint16_t pos, uint8_t data)
-{
-//    mapData[pos] = data;    
 }
 
 
@@ -321,7 +413,7 @@ void game_start()
     characterAttrTbl[idx].x = characterAttrTbl[2].attr.x << 8;
     characterAttrTbl[idx].y = characterAttrTbl[2].attr.y << 8;
     characterAttrTbl[idx].vx = 0;
-    characterAttrTbl[idx].vy = -2;
+    characterAttrTbl[idx].vy = 2;
     characterAttrTbl[idx].count = 10;
 
     idx++;
@@ -333,7 +425,7 @@ void game_start()
     characterAttrTbl[idx].x = characterAttrTbl[3].attr.x << 8;
     characterAttrTbl[idx].y = characterAttrTbl[3].attr.y << 8;
     characterAttrTbl[idx].vx = 0;
-    characterAttrTbl[idx].vy = -1;
+    characterAttrTbl[idx].vy = 1;
     characterAttrTbl[idx].count = 15;
 
     idx++;
@@ -357,7 +449,7 @@ void game_start()
     characterAttrTbl[idx].x = characterAttrTbl[5].attr.x << 8;
     characterAttrTbl[idx].y = characterAttrTbl[5].attr.y << 8;
     characterAttrTbl[idx].vx = 0;
-    characterAttrTbl[idx].vy = -2;
+    characterAttrTbl[idx].vy = 2;
     characterAttrTbl[idx].count = 29;
 
     idx++;
@@ -369,7 +461,7 @@ void game_start()
     characterAttrTbl[idx].x = characterAttrTbl[6].attr.x << 8;
     characterAttrTbl[idx].y = characterAttrTbl[6].attr.y << 8;
     characterAttrTbl[idx].vx = 0;
-    characterAttrTbl[idx].vy = -1;
+    characterAttrTbl[idx].vy = 1;
     characterAttrTbl[idx].count = 36;
 
     idx++;
@@ -384,51 +476,8 @@ void game_start()
     characterAttrTbl[idx].vy = 2;
     characterAttrTbl[idx].count = 41;
 
-/*
-    // マップデータ初期化
-    initMapData(0x20);
-
-    // マップデータ作成
-    writeMapData( 8 * 32 +  6, 'T');
-    writeMapData( 8 * 32 +  7, 'E');
-    writeMapData( 8 * 32 +  8, 'S');
-    writeMapData( 8 * 32 +  9, 'T');
-    writeMapData( 8 * 32 + 10, 'M');
-    writeMapData( 8 * 32 + 11, 'A');
-    writeMapData( 8 * 32 + 12, 'P');
-    writeMapData(16 * 32 + 18, 'T');
-    writeMapData(16 * 32 + 19, 'E');
-    writeMapData(16 * 32 + 20, 'S');
-    writeMapData(16 * 32 + 21, 'T');
-    writeMapData(16 * 32 + 22, 'M');
-    writeMapData(16 * 32 + 23, 'A');
-    writeMapData(16 * 32 + 24, 'P');
-    writeMapData(11 * 32 + 16, '2');
-
-    writeMapData(32 * 32 +  6, 'T');
-    writeMapData(32 * 32 +  7, 'E');
-    writeMapData(32 * 32 +  8, 'S');
-    writeMapData(32 * 32 +  9, 'T');
-    writeMapData(32 * 32 + 10, 'M');
-    writeMapData(32 * 32 + 11, 'A');
-    writeMapData(32 * 32 + 12, 'P');
-    writeMapData(40 * 32 + 18, 'T');
-    writeMapData(40 * 32 + 19, 'E');
-    writeMapData(40 * 32 + 20, 'S');
-    writeMapData(40 * 32 + 21, 'T');
-    writeMapData(40 * 32 + 22, 'M');
-    writeMapData(40 * 32 + 23, 'A');
-    writeMapData(40 * 32 + 24, 'P');
-    writeMapData(36 * 32 + 16, '1');
-
-    // マップのオフセット位置設定
-    mapOffset = 24 * 32;
-*/
-
     // 画面上のショット数カウンタをリセット
     playerBulletCount = 0;
-
-    clear_screenbuffer();
 
     // ゲーム状態変更
     change_game_state(STATE_GAME);
@@ -505,7 +554,7 @@ void game_main()
         } else if (character->type == TYPE_P_BULLET) {
             character->y += character->vy;
             character->attr.y = character->y >> 8;
-            if (character->attr.y < 16) {
+            if (character->attr.y < 14) {
                 character->type = TYPE_NONE;
                 character->attr.x = 0;
                 character->attr.y = 193;
@@ -517,20 +566,23 @@ void game_main()
         } else if (character->type == TYPE_ENEMY) {
             // 移動
             // 手を抜いてattrのx,yを直接更新しているが、本来はx,yを更新後にattr.x,yを算出すべき
-            if (character->vy != 0) {
+//            if (character->vy != 0) {
                 character->attr.y += character->vy;
+/*
                 if (character->attr.y < 8) {
                     character->attr.y = 8;
                     character->vy = character->vy * -1;
                 }
-                if (character->attr.y > 168) {
-                    character->attr.y = 168;
-                    character->vy = character->vy * -1;
+*/
+                if (character->attr.y > 176) {
+                    character->attr.y = 0;
+                    character->attr.x = get_rnd() % 176;
+                    character->vy = get_rnd() % 5 + 1;
                 }
-                // 一応内部座標も入れておく
+                // 内部座標も入れておく
                 character->x = character->attr.x << 8;
                 character->y = character->attr.y << 8;
-            }
+//            }
             // 弾を撃つか？
             if (character->count-- == 0) {
                 // 次の発射までのカウンタリセット
